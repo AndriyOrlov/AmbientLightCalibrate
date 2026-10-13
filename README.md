@@ -9,6 +9,7 @@ every 30 seconds, and AmbientLightCalibrate sets every monitor to the right brig
 </p>
 
 <p align="center">
+<a href="https://send.monobank.ua/jar/7AVDtzYypi"><img alt="Sponsor" src="https://img.shields.io/badge/sponsor-%E2%9D%A4%20Monobank-ea4aaa?logo=githubsponsors&logoColor=white"></a>
 <a href="https://github.com/AndriyOrlov/AmbientLightCalibrate/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/AndriyOrlov/AmbientLightCalibrate?label=download"></a>
 <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
 <img alt="Windows 10/11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4">

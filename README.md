@@ -47,6 +47,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 | Curve offset | One slider to make the whole automation brighter or darker |
 | Built-in brightness calibration | ~1 min per monitor: AmbientLightCalibrate steps the backlight 0→100 and measures nits |
 | Native look | Windows 11 dark Fluent flyout with acrylic backdrop, English / Ukrainian UI |
+| Calibration reminder | Every 1 / 2 / 3 months (or off): reads the creation date of each monitor's active SDR and HDR colour profile, shows a banner and a tray notification, "remind me in a week" |
 | Start with Windows | One switch (per-user `Run` key, no admin) |
 | Log | Every reading and change, in `%APPDATA%\AmbientLightCalibrate\log.txt` |
 
@@ -132,7 +133,8 @@ ArgyllCMS / Calibrite стає на паузу.
 
 **Як почати:** запустіть `AmbientLightCalibrate.exe` → ⚙ Налаштування → «Калібрувати» для кожного монітора (датчик на екрані,
 розсіювач відкритий, ~1 хв) → покладіть датчик біля монітора з закритим розсіювачем → увімкніть «Автояскравість».
-Інтерфейс автоматично українською, якщо Windows українська.
+Інтерфейс автоматично українською, якщо Windows українська. Програма також нагадує про перекалібрування раз на
+1 / 2 / 3 місяці: дату вона бере з активного SDR- і HDR-профілю кожного монітора.
 
 Код відкритий під ліцензією Apache-2.0: користуйтесь, змінюйте, вбудовуйте, але зберігайте файл NOTICE і вказуйте
 автора — **Andrii Orlov (DeadSue)**.

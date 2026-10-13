@@ -118,7 +118,20 @@ namespace AmbientLightCalibrate
             AllSlider.Value = en.Count > 0 ? en.Average(r => r.slider.Value) : 120;
             AllText.Text = $"{AllSlider.Value:F0} {S.NitsUnit}";
             RefreshStatus();
+            RefreshReminder();
             _loading = false;
+        }
+
+        void RefreshReminder()
+        {
+            var due = Reminder.Overdue(A.Cfg);
+            RecalCard.Visibility = due.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            RecalText.Text = string.Join("\n", due.Select(d => S.RecalItem(d.name, d.hdr, d.days)));
+        }
+
+        void Snooze_Click(object s, RoutedEventArgs e)
+        {
+            A.Cfg.SnoozeUntil = DateTime.Now.AddDays(7); A.Cfg.Save(); RefreshReminder();
         }
 
         static Grid Row3(out TextBlock name, out Slider slider, out TextBlock value)
@@ -206,6 +219,11 @@ namespace AmbientLightCalibrate
             CurveRows.Children.Clear(); _curve.Clear();
             foreach (var p in c.Curve) AddCurveRow(p.lux.ToString(CultureInfo.InvariantCulture), p.nits.ToString(CultureInfo.InvariantCulture));
             BuildCalibRows();
+            ReminderBox.Items.Clear();
+            foreach (var n in new[] { 0, 1, 2, 3 }) ReminderBox.Items.Add(new ComboBoxItem { Content = n == 0 ? S.ReminderOff : S.EveryMonths(n), Tag = n });
+            ReminderBox.SelectedIndex = Math.Clamp(c.ReminderMonths, 0, 3);
+            ProfileDatesText.Text = string.Join("\n", DisplayInfo.ProfileDates().Select(p =>
+                S.ProfileLine(string.IsNullOrEmpty(p.name) ? p.model : p.name, p.hdr, p.created, (int)(DateTime.Now - p.created).TotalDays)));
             SaveError.Text = "";
             MainPage.Visibility = Visibility.Collapsed; SettingsPage.Visibility = Visibility.Visible;
             Scroller.ScrollToTop();
@@ -317,6 +335,7 @@ namespace AmbientLightCalibrate
             var c = A.Cfg;
             c.IntervalS = (int)Math.Round(iv * 60); c.Hysteresis = hy; c.MaxStep = st;
             c.SetCurve(pts); c.ArgyllSetting = ArgyllBox.Text.Trim();
+            if (ReminderBox.SelectedItem is ComboBoxItem ri) c.ReminderMonths = (int)ri.Tag;
             c.Save();
             Log.Write($"settings: interval {c.IntervalS}s, hysteresis {hy}%, step {st} nits, curve {string.Join(" ", pts.Select(p => $"{p.Item1}:{p.Item2}"))}");
             ShowMain(); LoadMain(); if (c.Auto) A.MeasureNow();

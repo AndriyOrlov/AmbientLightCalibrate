@@ -36,6 +36,17 @@
                 <Button Grid.Column="1" Content="{x:Static l:S.Measure}" Padding="12,4" Margin="10,0,0,0" Click="Measure_Click"/>
             </Grid>
 
+            <Border x:Name="RecalCard" Style="{StaticResource CardBorder}" Visibility="Collapsed" BorderBrush="#66FFC83D">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE7BA;" FontFamily="{StaticResource Icons}" Foreground="{StaticResource Accent}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{x:Static l:S.RecalTitle}" FontWeight="SemiBold" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock x:Name="RecalText" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,6"/>
+                    <Button Content="{x:Static l:S.Snooze}" HorizontalAlignment="Left" Padding="12,3" Click="Snooze_Click"/>
+                </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource CardBorder}">
                 <StackPanel>
                     <TextBlock Text="{x:Static l:S.Monitors}" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -105,6 +116,18 @@
                         </StackPanel>
                     </StackPanel>
                     <TextBlock x:Name="CalibStatus" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardBorder}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Static l:S.ReminderSetting}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ReminderBox" Grid.Column="1" MinWidth="130"/>
+                    </Grid>
+                    <TextBlock Text="{x:Static l:S.ReminderHint}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,4"/>
+                    <TextBlock x:Name="ProfileDatesText" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 

@@ -2,6 +2,7 @@
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -33,6 +34,10 @@ namespace AmbientLightCalibrate
             _tray.MouseUp += (s, a) => Dispatcher.Invoke(ToggleFlyout);
             UpdateTray();
             new Thread(Loop) { IsBackground = true, Name = "ambient" }.Start();
+            var remind = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+            remind.Tick += (s, a) => CheckReminder();
+            remind.Start();
+            Dispatcher.BeginInvoke(new Action(async () => { await System.Threading.Tasks.Task.Delay(60000); CheckReminder(); }));
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -42,6 +47,16 @@ namespace AmbientLightCalibrate
         }
 
         public void Quit() => Shutdown();
+
+        DateTime _lastBalloon = DateTime.MinValue;
+        void CheckReminder()
+        {
+            if ((DateTime.Now - _lastBalloon).TotalHours < 24) return;
+            var due = Reminder.Overdue(Config.Load());
+            if (due.Count == 0) return;
+            _lastBalloon = DateTime.Now;
+            Balloon(S.Balloon(due.Count) + "\n" + string.Join("\n", due.Select(d => S.RecalItem(d.name, d.hdr, d.days))));
+        }
 
         public void Balloon(string text)
         {

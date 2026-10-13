@@ -64,6 +64,8 @@ namespace AmbientLightCalibrate
             Def("argyll_bin", "");
             Def("instrument", 1);
             Def("display_type", "l");
+            Def("reminder_months", 2);           // 0 = off
+            Def("reminder_snooze_until", "");
             _j["hdr_skip"] = "all";      // never change brightness of a monitor that is in HDR mode
         }
 
@@ -77,6 +79,12 @@ namespace AmbientLightCalibrate
         public double Offset { get => D("offset_nits"); set => _j["offset_nits"] = value; }
         public bool Auto { get => _j["tray_auto"].GetValue<bool>(); set => _j["tray_auto"] = value; }
         public int Instrument => (int)D("instrument");
+        public int ReminderMonths { get => (int)D("reminder_months"); set => _j["reminder_months"] = value; }
+        public DateTime SnoozeUntil
+        {
+            get => DateTime.TryParse(_j["reminder_snooze_until"]?.GetValue<string>(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : DateTime.MinValue;
+            set => _j["reminder_snooze_until"] = value.ToString("s", CultureInfo.InvariantCulture);
+        }
         public string DisplayType => _j["display_type"].GetValue<string>();
         string _argyll;
         public string ArgyllSetting { get => _j["argyll_bin"].GetValue<string>(); set { _j["argyll_bin"] = value; _argyll = null; } }
@@ -272,6 +280,46 @@ namespace AmbientLightCalibrate
             return d;
         }
 
+        [DllImport("mscms.dll", CharSet = CharSet.Unicode)]
+        static extern int ColorProfileGetDisplayDefault(int scope, LUID adapter, uint sourceId, int type, int subType, out IntPtr name);
+
+        /// <summary>When each monitor's active colour profile (SDR and HDR) was created — i.e. last calibration.</summary>
+        public static List<(string model, string name, string profile, bool hdr, DateTime created)> ProfileDates()
+        {
+            var res = new List<(string, string, string, bool, DateTime)>();
+            var dir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"spool\drivers\color");
+            try
+            {
+                foreach (var (t, p) in Targets())
+                {
+                    var model = ModelOf(t.monitorDevicePath); if (model == null) continue;
+                    foreach (var (sub, hdr) in new[] { (7, false), (8, true) })   // standard / extended (advanced colour)
+                    {
+                        if (ColorProfileGetDisplayDefault(1, p.sourceInfo.adapterId, p.sourceInfo.id, 0, sub, out IntPtr n) != 0 || n == IntPtr.Zero) continue;
+                        var file = Marshal.PtrToStringUni(n);
+                        if (string.IsNullOrEmpty(file) || file.StartsWith("sRGB", StringComparison.OrdinalIgnoreCase)) continue;
+                        var created = IccDate(System.IO.Path.Combine(dir, file));
+                        if (created != null) res.Add((model, t.monitorFriendlyDeviceName, file, hdr, created.Value));
+                    }
+                }
+            }
+            catch { }
+            return res;
+        }
+
+        // ICC header bytes 24..35: creation date/time (big-endian), falls back to the file time
+        static DateTime? IccDate(string path)
+        {
+            try
+            {
+                var b = new byte[36];
+                using (var f = File.OpenRead(path)) if (f.Read(b, 0, 36) < 36) return null;
+                int U(int o) => (b[o] << 8) | b[o + 1];
+                return new DateTime(U(24), U(26), U(28), U(30), U(32), U(34), DateTimeKind.Utc).ToLocalTime();
+            }
+            catch { try { return File.GetLastWriteTime(path); } catch { return null; } }
+        }
+
         public static bool HdrOn(string model)
         {
             try
@@ -363,6 +411,20 @@ namespace AmbientLightCalibrate
             if (!File.Exists(b + ".ti3")) return null;
             var m = Regex.Match(File.ReadAllText(b + ".ti3"), "LUMINANCE_XYZ_CDM2\\s+\"[\\d.]+ ([\\d.]+)");
             return m.Success ? double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : null;
+        }
+    }
+
+    public static class Reminder
+    {
+        /// <summary>Profiles older than the reminder period (empty when off or snoozed).</summary>
+        public static List<(string name, bool hdr, int days)> Overdue(Config cfg, bool ignoreSnooze = false)
+        {
+            var list = new List<(string, bool, int)>();
+            if (cfg.ReminderMonths <= 0 || (!ignoreSnooze && DateTime.Now < cfg.SnoozeUntil)) return list;
+            foreach (var p in DisplayInfo.ProfileDates())
+                if (p.created.AddMonths(cfg.ReminderMonths) < DateTime.Now)
+                    list.Add((string.IsNullOrEmpty(p.name) ? p.model : p.name, p.hdr, (int)(DateTime.Now - p.created).TotalDays));
+            return list;
         }
     }
 

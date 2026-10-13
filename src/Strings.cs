@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 
 namespace AmbientLightCalibrate
@@ -62,6 +63,16 @@ namespace AmbientLightCalibrate
         public static string MeasureFailed => T("measurement failed", "замір не вдався");
         public static string NoSensor => T("sensor not responding", "датчик не відповідає");
         public static string NoArgyll => T("ArgyllCMS not found (Settings)", "не знайдено ArgyllCMS (Налаштування)");
+
+        public static string RecalTitle => T("Time to recalibrate", "Час перекалібрувати");
+        public static string RecalItem(string name, bool hdr, int days) => T($"{name} ({(hdr ? "HDR" : "SDR")}) — {days} days since calibration", $"{name} ({(hdr ? "HDR" : "SDR")}) — {days} дн. від калібрування");
+        public static string Snooze => T("Remind me in a week", "Нагадати через тиждень");
+        public static string ReminderSetting => T("Calibration reminder", "Нагадування про калібрування");
+        public static string ReminderHint => T("The date comes from each monitor's active colour profile (SDR and HDR).", "Дата береться з активного колірного профілю кожного монітора (SDR і HDR).");
+        public static string ReminderOff => T("Off", "Вимкнено");
+        public static string EveryMonths(int n) => T(n == 1 ? "Every month" : $"Every {n} months", n == 1 ? "Щомісяця" : $"Кожні {n} місяці");
+        public static string ProfileLine(string name, bool hdr, DateTime d, int days) => T($"{name} {(hdr ? "HDR" : "SDR")}: {d:dd.MM.yyyy} ({days} d)", $"{name} {(hdr ? "HDR" : "SDR")}: {d:dd.MM.yyyy} ({days} дн.)");
+        public static string Balloon(int n) => T($"{n} colour profile(s) are due for recalibration.", $"Час перекалібрувати: {n} профіль(і).");
 
         public static string ErrInterval => T("Interval ≥ 0.5 min", "Інтервал ≥ 0.5 хв");
         public static string ErrNumber => T("Enter a number", "Введіть число");

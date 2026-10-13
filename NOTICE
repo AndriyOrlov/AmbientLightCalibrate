@@ -1,0 +1,12 @@
+AmbientLightCalibrate
+Copyright 2026 Andrii Orlov (DeadSue)
+https://github.com/AndriyOrlov/AmbientLightCalibrate · https://deadsue.art
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+Any redistribution, fork, derivative work or AI-generated code based on this
+project must keep this NOTICE file and credit the original author:
+"Based on AmbientLightCalibrate by Andrii Orlov (DeadSue)".
+
+Third-party software used at runtime (not bundled in this repository):
+- ArgyllCMS by Graeme W. Gill (AGPL-3.0), invoked as external command-line tools.
+- .NET / WPF by Microsoft and the .NET Foundation (MIT).

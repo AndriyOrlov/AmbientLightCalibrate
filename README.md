@@ -34,7 +34,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
   brightness is mapped to measured luminance (nits), so two different monitors land on the *same* nits.
 * **Keeps your calibration.** Only the backlight (DDC/CI VCP 0x10) is changed — never RGB gains, never the video LUT.
   White point and gamma of a calibrated LCD stay put.
-* **Calm.** Smooth steps, a dead zone so it doesn't twitch, and a one-hour pause after you touch a slider.
+* **Quick and calm.** A light switched on or off is followed within one reading, with a one-second fade; a dead zone keeps it from twitching, and a one-hour pause after you touch a slider.
 * **Safe.** Leaves a monitor alone while it is in **HDR** (HDR wants full backlight), and pauses while DisplayCAL,
   ArgyllCMS, HDRDisplayCalibrate, Calibrite/i1Profiler or similar tools are using the sensor.
 
@@ -42,7 +42,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 
 | | |
 |---|---|
-| Auto brightness | Room lux → target nits through an editable curve; a reading every 30 s (10 s minimum), median of the last three readings, gentle steps |
+| Auto brightness | Room lux → target nits through an editable curve; a reading every 30 s (10 s minimum); big changes are confirmed by a second reading at once, then faded in |
 | Per-monitor sliders in nits | Plus "all monitors" and presets 80 / 100 / 120 / 140 / 160 / 200 |
 | Curve offset | One slider to make the whole automation brighter or darker |
 | Built-in brightness calibration | ~1 min per monitor: AmbientLightCalibrate steps the backlight 0→100 and measures nits |
@@ -79,14 +79,14 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
    curve: lux → nits  (+ offset)       2 lx → 100 · 10 lx → 120 · 50 lx → 140 · 150 lx → 160 · 400 lx → 185 · 1000 lx → 220
           │
           ▼  per monitor: measured map  Brightness → nits   (from the one-time calibration)
-   DDC/CI  SetVCPFeature(0x10)          only if the change is above the dead zone; at most "max step" nits at once
+   DDC/CI  SetVCPFeature(0x10)          only if the change is above the dead zone; faded in over ~1 s
 ```
 
 * **Curve** – editable in *Settings*. Defaults follow common viewing guidance: ~100–120 nits in a dim room,
   160–220 nits in daylight.
 * **Offset** – shifts the whole curve. Use it if the defaults feel dim, or when the sensor sits where it sees less light
   than the screen does (e.g. behind the monitor).
-* **Median of the last three readings**, a **dead zone** (default 6 %) and a **max step** (default 15 nits per reading) keep changes smooth — someone walking past the sensor does not flicker the screens.
+* A **big jump is confirmed by a second reading right away**: a lamp switched on reacts within one cycle, while someone walking past the sensor changes nothing. A **dead zone** (default 6 %) ignores small drifts, and the new brightness is **faded in over about a second**. An optional **max step** (default 0 = no limit) caps each change.
 * **Manual override** – moving any slider pauses automation for an hour.
 
 ## Build from source

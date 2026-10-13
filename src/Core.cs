@@ -57,7 +57,10 @@ namespace AmbientLightCalibrate
             Def("interval_s", 30);
             Def("curve", JsonNode.Parse("[[2,100],[10,120],[50,140],[150,160],[400,185],[1000,220]]"));
             Def("hysteresis_pct", 6);
-            Def("max_step_nits", 15);
+            // 1.2.x limited each change to 15 nits per reading, which felt slow; now 0 = go straight to the target (with a fade)
+            if (!_j.ContainsKey("cfg_version") && _j.ContainsKey("max_step_nits") && Num(_j["max_step_nits"]) == 15) _j["max_step_nits"] = 0;
+            _j["cfg_version"] = 2;
+            Def("max_step_nits", 0);
             Def("monitors", new JsonObject());
             Def("offset_nits", 0);
             Def("tray_auto", false);
@@ -445,7 +448,9 @@ namespace AmbientLightCalibrate
 
         public static string BusyWith() => string.Join(", ", Busy.Where(n => Process.GetProcessesByName(n).Length > 0));
 
-        static readonly Queue<double> Recent = new();
+        static double? Stable;
+
+        static bool Big(double a, double b) => Math.Abs(a - b) > 2 && Math.Max(a, b) / Math.Max(Math.Min(a, b), 0.1) > 1.3;
 
         public static Result AdjustOnce(Config cfg)
         {
@@ -455,30 +460,52 @@ namespace AmbientLightCalibrate
             if (busy.Length > 0) { r.Error = S.BusyWith(busy); Log.Write("skip: " + busy + " running"); return r; }
             try { r.Lux = Argyll.AmbientLux(cfg); } catch (Exception e) { r.Error = S.MeasureFailed; Log.Write("ambient failed: " + e.Message); }
             if (r.Lux == null) { r.Error ??= S.NoSensor; Log.Write("ambient: no reading"); return r; }
-            // median of the last three readings: someone walking past the sensor doesn't change anything
-            Recent.Enqueue(r.Lux.Value); while (Recent.Count > 3) Recent.Dequeue();
-            var sorted = Recent.OrderBy(x => x).ToList();
-            double lux = sorted[sorted.Count / 2];
+            double lux = r.Lux.Value;
+            // a big jump is confirmed by a second reading right away instead of waiting for the next cycles:
+            // a light switched on/off reacts at once, someone walking past the sensor changes nothing
+            if (Stable is double prev && Big(lux, prev))
+            {
+                double? again = null;
+                try { again = Argyll.AmbientLux(cfg); } catch { }
+                if (again is double a && Big(a, prev) && (a > prev) == (lux > prev)) { lux = a; r.Lux = a; }
+                else { Log.Write($"room {lux:F1} lx not confirmed ({again:F1}), keeping {prev:F1}"); lux = prev; }
+            }
+            Stable = lux;
             r.Target = cfg.TargetNits(lux);
             var mons = Ddc.Enumerate();
             try
             {
+                var moves = new List<(Monitor m, uint from, uint to)>();
                 foreach (var m in mons)
                 {
                     var map = cfg.Map(m.Model);
                     if (map == null || !m.HasDdc) continue;
                     if (DisplayInfo.HdrOn(m.Model)) { r.Notes.Add($"{m.Model}: HDR, untouched"); continue; }
                     double now = Config.NitsFor(m.Cur, map);
-                    double want = Math.Max(Math.Min(r.Target.Value, now + cfg.MaxStep), now - cfg.MaxStep);
+                    double want = cfg.MaxStep > 0 ? Math.Max(Math.Min(r.Target.Value, now + cfg.MaxStep), now - cfg.MaxStep) : r.Target.Value;
                     if (Math.Abs(want - now) / Math.Max(now, 1) * 100 < cfg.Hysteresis) { r.Notes.Add($"{m.Model}: {now:F0} nits (kept)"); continue; }
                     int s = Config.SettingFor(want, map);
-                    Ddc.Set(m, (uint)s);
+                    if (s == m.Cur) { r.Notes.Add($"{m.Model}: {now:F0} nits (kept)"); continue; }
+                    moves.Add((m, m.Cur, (uint)s));
                     r.Notes.Add($"{m.Model}: brightness {m.Cur} -> {s} (~{now:F0} -> {Config.NitsFor(s, map):F0} nits)");
                 }
+                Fade(moves);
             }
             finally { Ddc.Release(mons); }
             Log.Write($"room {r.Lux:F1} lx -> target {r.Target:F0} nits | " + string.Join("; ", r.Notes));
             return r;
+        }
+
+        /// <summary>Moves all monitors to their new brightness together in small steps (about a second), so the change is smooth.</summary>
+        public static void Fade(List<(Monitor m, uint from, uint to)> moves)
+        {
+            if (moves.Count == 0) return;
+            int steps = (int)Math.Clamp(moves.Max(x => Math.Abs((int)x.to - (int)x.from)), 1, 8);
+            for (int i = 1; i <= steps; i++)
+            {
+                foreach (var (m, from, to) in moves) Ddc.Set(m, (uint)Math.Round(from + (to - (double)from) * i / steps));
+                if (i < steps) System.Threading.Thread.Sleep(90);
+            }
         }
 
         /// <summary>Measure Brightness → nits for one monitor; restores its brightness afterwards.</summary>

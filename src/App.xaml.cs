@@ -94,13 +94,16 @@ namespace AmbientLightCalibrate
         {
             while (true)
             {
+                var started = DateTime.Now;
                 if (Cfg.Auto && DateTime.Now >= HoldUntil)
                 {
                     Dispatcher.Invoke(() => { Busy = true; Changed?.Invoke(); });
                     var r = Engine.AdjustOnce(Config.Load());
                     Dispatcher.Invoke(() => { Cfg = Config.Load(); Last = r; Busy = false; UpdateTray(); });
                 }
-                _wake.WaitOne(TimeSpan.FromSeconds(Math.Max(Cfg.IntervalS, 10)));
+                // interval counts from the start of a reading (a dark-room reading alone can take 15 s)
+                var wait = TimeSpan.FromSeconds(Math.Max(Cfg.IntervalS, 10)) - (DateTime.Now - started);
+                _wake.WaitOne(wait < TimeSpan.FromSeconds(3) ? TimeSpan.FromSeconds(3) : wait);
             }
         }
 

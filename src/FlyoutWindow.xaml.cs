@@ -323,7 +323,7 @@ namespace AmbientLightCalibrate
         {
             if (!Num(IntervalBox.Text, out double iv) || iv < 10) { SaveError.Text = S.ErrInterval; return; }
             if (!Num(HystBox.Text, out double hy) || hy < 0) { SaveError.Text = S.ErrNumber; return; }
-            if (!Num(StepBox.Text, out double st) || st <= 0) { SaveError.Text = S.ErrNumber; return; }
+            if (!Num(StepBox.Text, out double st) || st < 0) { SaveError.Text = S.ErrNumber; return; }
             var pts = new List<(double, double)>();
             foreach (var (l, n) in _curve)
             {

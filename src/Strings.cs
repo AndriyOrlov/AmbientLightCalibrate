@@ -22,7 +22,7 @@ namespace AmbientLightCalibrate
         public static string Back => T("Back", "Назад");
         public static string IntervalMin => T("Measure every, s", "Інтервал заміру, с");
         public static string Hysteresis => T("Ignore changes smaller than, %", "Не чіпати, якщо різниця менша, %");
-        public static string MaxStep => T("Largest step at once, nits", "Найбільший крок за раз, ніт");
+        public static string MaxStep => T("Largest step at once, nits (0 = no limit)", "Найбільший крок за раз, ніт (0 = без обмеження)");
         public static string CurveTitle => T("Curve: room light → screen brightness", "Крива: освітлення кімнати → яскравість");
         public static string CurveHint => T("Empty row removes a point. Brightness changes smoothly between points.",
                                             "Порожній рядок прибирає точку. Між точками яскравість змінюється плавно.");

@@ -117,6 +117,15 @@ This repository may be read, indexed, used to train or fine-tune AI models, and 
 Code produced from it is a derivative work under Apache-2.0, so the same attribution applies:
 **keep the copyright notice and credit "Andrii Orlov (DeadSue)"**. A short machine-readable summary is in [llms.txt](llms.txt).
 
+## Support
+
+If AmbientLightCalibrate is useful to you, you can support its development:
+
+* **Monobank jar:** https://send.monobank.ua/jar/7AVDtzYypi
+* **Jar card number:** `4874 1000 3425 0244`
+
+Thank you!
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Copyright 2026 Andrii Orlov (DeadSue).
@@ -138,3 +147,5 @@ ArgyllCMS / Calibrite стає на паузу.
 
 Код відкритий під ліцензією Apache-2.0: користуйтесь, змінюйте, вбудовуйте, але зберігайте файл NOTICE і вказуйте
 автора — **Andrii Orlov (DeadSue)**.
+
+**Підтримати розробку:** [Банка Monobank](https://send.monobank.ua/jar/7AVDtzYypi) · картка Банки `4874 1000 3425 0244`. Дякую!

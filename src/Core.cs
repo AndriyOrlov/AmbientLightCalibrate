@@ -449,12 +449,20 @@ namespace AmbientLightCalibrate
         public static string BusyWith() => string.Join(", ", Busy.Where(n => Process.GetProcessesByName(n).Length > 0));
 
         static double? Stable;
+        public static double? StableLux => Stable;
+
+        /// <summary>Raised for every brightness value written (also each step of a fade): model, Brightness setting.</summary>
+        public static event Action<string, uint> BrightnessSet;
+        /// <summary>Bumped by every manual change: a running reading or fade notices it and leaves the monitors alone.</summary>
+        public static int Generation;
+        public static readonly object DdcLock = new();
 
         static bool Big(double a, double b) => Math.Abs(a - b) > 2 && Math.Max(a, b) / Math.Max(Math.Min(a, b), 0.1) > 1.3;
 
         public static Result AdjustOnce(Config cfg)
         {
             var r = new Result();
+            int gen = Generation;
             if (cfg.ArgyllBin == null) { r.Error = S.NoArgyll; return r; }
             var busy = BusyWith();
             if (busy.Length > 0) { r.Error = S.BusyWith(busy); Log.Write("skip: " + busy + " running"); return r; }
@@ -471,40 +479,69 @@ namespace AmbientLightCalibrate
                 else { Log.Write($"room {lux:F1} lx not confirmed ({again:F1}), keeping {prev:F1}"); lux = prev; }
             }
             Stable = lux;
-            r.Target = cfg.TargetNits(lux);
-            var mons = Ddc.Enumerate();
-            try
-            {
-                var moves = new List<(Monitor m, uint from, uint to)>();
-                foreach (var m in mons)
-                {
-                    var map = cfg.Map(m.Model);
-                    if (map == null || !m.HasDdc) continue;
-                    if (DisplayInfo.HdrOn(m.Model)) { r.Notes.Add($"{m.Model}: HDR, untouched"); continue; }
-                    double now = Config.NitsFor(m.Cur, map);
-                    double want = cfg.MaxStep > 0 ? Math.Max(Math.Min(r.Target.Value, now + cfg.MaxStep), now - cfg.MaxStep) : r.Target.Value;
-                    if (Math.Abs(want - now) / Math.Max(now, 1) * 100 < cfg.Hysteresis) { r.Notes.Add($"{m.Model}: {now:F0} nits (kept)"); continue; }
-                    int s = Config.SettingFor(want, map);
-                    if (s == m.Cur) { r.Notes.Add($"{m.Model}: {now:F0} nits (kept)"); continue; }
-                    moves.Add((m, m.Cur, (uint)s));
-                    r.Notes.Add($"{m.Model}: brightness {m.Cur} -> {s} (~{now:F0} -> {Config.NitsFor(s, map):F0} nits)");
-                }
-                Fade(moves);
-            }
-            finally { Ddc.Release(mons); }
-            Log.Write($"room {r.Lux:F1} lx -> target {r.Target:F0} nits | " + string.Join("; ", r.Notes));
+            if (gen != Generation) { r.Target = cfg.TargetNits(lux); Log.Write($"room {lux:F1} lx | manual change meanwhile, monitors left alone"); return r; }
+            Apply(cfg, lux, r, gen);
             return r;
         }
 
+        /// <summary>Sets every mapped monitor for this room light (also used right away when the curve offset changes).</summary>
+        public static void Apply(Config cfg, double lux, Result r, int gen)
+        {
+            r.Target = cfg.TargetNits(lux);
+            lock (DdcLock)
+            {
+                var mons = Ddc.Enumerate();
+                try
+                {
+                    var moves = new List<(Monitor m, uint from, uint to)>();
+                    foreach (var m in mons)
+                    {
+                        var map = cfg.Map(m.Model);
+                        if (map == null || !m.HasDdc) continue;
+                        if (DisplayInfo.HdrOn(m.Model)) { r.Notes.Add($"{m.Model}: HDR, untouched"); continue; }
+                        double now = Config.NitsFor(m.Cur, map);
+                        double want = cfg.MaxStep > 0 ? Math.Max(Math.Min(r.Target.Value, now + cfg.MaxStep), now - cfg.MaxStep) : r.Target.Value;
+                        if (Math.Abs(want - now) / Math.Max(now, 1) * 100 < cfg.Hysteresis) { r.Notes.Add($"{m.Model}: {now:F0} nits (kept)"); continue; }
+                        int s = Config.SettingFor(want, map);
+                        if (s == m.Cur) { r.Notes.Add($"{m.Model}: {now:F0} nits (kept)"); continue; }
+                        moves.Add((m, m.Cur, (uint)s));
+                        r.Notes.Add($"{m.Model}: brightness {m.Cur} -> {s} (~{now:F0} -> {Config.NitsFor(s, map):F0} nits)");
+                    }
+                    Fade(moves, gen);
+                }
+                finally { Ddc.Release(mons); }
+            }
+            Log.Write($"room {r.Lux:F1} lx -> target {r.Target:F0} nits | " + string.Join("; ", r.Notes));
+        }
+
+        /// <summary>Manual brightness from the flyout: stops any automatic change in progress.</summary>
+        public static void SetManual(Dictionary<string, int> todo)
+        {
+            System.Threading.Interlocked.Increment(ref Generation);
+            lock (DdcLock)
+            {
+                var mons = Ddc.Enumerate();
+                try { foreach (var m in mons) if (todo.TryGetValue(m.Model, out int s)) Ddc.Set(m, (uint)s); }
+                finally { Ddc.Release(mons); }
+            }
+            Log.Write("manual: " + string.Join("; ", todo.Select(kv => $"{kv.Key} -> {kv.Value}")));
+        }
+
         /// <summary>Moves all monitors to their new brightness together in small steps (about a second), so the change is smooth.</summary>
-        public static void Fade(List<(Monitor m, uint from, uint to)> moves)
+        public static void Fade(List<(Monitor m, uint from, uint to)> moves, int gen)
         {
             if (moves.Count == 0) return;
-            int steps = (int)Math.Clamp(moves.Max(x => Math.Abs((int)x.to - (int)x.from)), 1, 8);
+            int steps = (int)Math.Clamp(moves.Max(x => Math.Abs((int)x.to - (int)x.from)), 1, 12);
             for (int i = 1; i <= steps; i++)
             {
-                foreach (var (m, from, to) in moves) Ddc.Set(m, (uint)Math.Round(from + (to - (double)from) * i / steps));
-                if (i < steps) System.Threading.Thread.Sleep(90);
+                if (gen != Generation) return;          // the user grabbed a slider
+                foreach (var (m, from, to) in moves)
+                {
+                    uint v = (uint)Math.Round(from + (to - (double)from) * i / steps);
+                    Ddc.Set(m, v);
+                    BrightnessSet?.Invoke(m.Model, v);
+                }
+                if (i < steps) System.Threading.Thread.Sleep(80);
             }
         }
 

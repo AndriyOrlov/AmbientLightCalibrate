@@ -25,6 +25,7 @@ namespace AmbientLightCalibrate
         readonly List<(string model, Slider slider, TextBlock text, List<(double s, double n)> map)> _rows = new();
         readonly Dictionary<string, int> _pending = new();
         readonly DispatcherTimer _apply = new() { Interval = TimeSpan.FromMilliseconds(180) };
+        readonly DispatcherTimer _offset = new() { Interval = TimeSpan.FromMilliseconds(250) };
         readonly List<(TextBox lux, TextBox nits)> _curve = new();
         bool _loading;
         string _calibModel, _calibName;
@@ -40,6 +41,7 @@ namespace AmbientLightCalibrate
                 Presets.Children.Add(b);
             }
             _apply.Tick += (s, e) => Flush();
+            _offset.Tick += (s, e) => { _offset.Stop(); A.Cfg.Offset = OffsetSlider.Value; A.Cfg.Save(); A.Reapply(); };
             Deactivated += (s, e) => { Hide(); HiddenAt = DateTime.Now; };
             SourceInitialized += (s, e) => Backdrop();
             SizeChanged += (s, e) => Anchor();
@@ -161,13 +163,23 @@ namespace AmbientLightCalibrate
             var todo = new Dictionary<string, int>(_pending); _pending.Clear();
             if (todo.Count == 0) return;
             A.ManualChange();
-            Task.Run(() =>
+            Task.Run(() => Engine.SetManual(todo));
+        }
+
+        /// <summary>Live view of a brightness written by the automation (each step of a fade).</summary>
+        public void ShowBrightness(string model, uint setting)
+        {
+            if (!IsLoaded) return;
+            var row = _rows.FirstOrDefault(r => r.model == model);
+            if (row.slider == null || _pending.Count > 0) return;
+            bool was = _loading; _loading = true;
+            try
             {
-                var mons = Ddc.Enumerate();
-                try { foreach (var m in mons) if (todo.TryGetValue(m.Model, out int s)) Ddc.Set(m, (uint)s); }
-                finally { Ddc.Release(mons); }
-                Log.Write("manual: " + string.Join("; ", todo.Select(kv => $"{kv.Key} -> {kv.Value}")));
-            });
+                row.slider.Value = Config.NitsFor(setting, row.map);
+                var en = _rows.Where(r => r.slider.IsEnabled).ToList();
+                if (en.Count > 0) AllSlider.Value = en.Average(r => r.slider.Value);
+            }
+            finally { _loading = was; }
         }
 
         void AllSlider_ValueChanged(object s, RoutedPropertyChangedEventArgs<double> e)
@@ -184,8 +196,7 @@ namespace AmbientLightCalibrate
             if (OffsetText == null) return;
             OffsetText.Text = $"{OffsetSlider.Value:+0;-0;0} {S.NitsUnit}";
             if (_loading) return;
-            A.Cfg.Offset = OffsetSlider.Value; A.Cfg.Save();
-            if (A.Cfg.Auto) A.MeasureNow();
+            _offset.Stop(); _offset.Start();      // the offset keeps automation on and applies at once
         }
 
         void AutoSwitch_Click(object s, RoutedEventArgs e) { A.Auto = AutoSwitch.IsChecked == true; RefreshStatus(); }

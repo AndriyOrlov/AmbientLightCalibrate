@@ -16,7 +16,6 @@ namespace AmbientLightCalibrate
         public Config Cfg;
         public Result Last;
         public bool Busy;
-        public DateTime HoldUntil = DateTime.MinValue;   // a manual change pauses the automation for an hour
         public event Action Changed;
 
         System.Windows.Forms.NotifyIcon _tray;
@@ -33,6 +32,8 @@ namespace AmbientLightCalibrate
             _tray = new System.Windows.Forms.NotifyIcon { Visible = true };
             _tray.MouseUp += (s, a) => Dispatcher.Invoke(ToggleFlyout);
             UpdateTray();
+            // every brightness write (each fade step) moves the flyout sliders live
+            Engine.BrightnessSet += (model, v) => Dispatcher.BeginInvoke(new Action(() => _flyout?.ShowBrightness(model, v)));
             new Thread(Loop) { IsBackground = true, Name = "ambient" }.Start();
             var remind = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(1) };
             remind.Tick += (s, a) => CheckReminder();
@@ -76,15 +77,35 @@ namespace AmbientLightCalibrate
         public bool Auto
         {
             get => Cfg.Auto;
-            set { Cfg.Auto = value; Cfg.Save(); HoldUntil = DateTime.MinValue; UpdateTray(); if (value) _wake.Set(); }
+            set
+            {
+                Cfg.Auto = value; Cfg.Save();
+                if (!value) Interlocked.Increment(ref Engine.Generation);   // a reading in progress leaves the monitors alone
+                UpdateTray();
+                if (value) { Reapply(); _wake.Set(); }
+            }
         }
 
-        public void MeasureNow() { HoldUntil = DateTime.MinValue; _wake.Set(); }
-        public void ManualChange() { HoldUntil = DateTime.Now.AddHours(1); UpdateTray(); }
+        public void MeasureNow() => _wake.Set();
+
+        /// <summary>A slider or preset was used: automation switches off until the user turns it back on.</summary>
+        public void ManualChange() { if (Cfg.Auto) Auto = false; }
+
+        /// <summary>Applies the curve to the last room reading at once (offset changed, auto switched back on).</summary>
+        public void Reapply()
+        {
+            if (!Cfg.Auto || Engine.StableLux is not double lux) return;
+            var cfg = Cfg; int gen = Engine.Generation;
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                var r = new Result { Lux = lux };
+                Engine.Apply(cfg, lux, r, gen);
+                Dispatcher.Invoke(() => { Last = r; UpdateTray(); });
+            });
+        }
 
         public string StatusText()
         {
-            if (Cfg.Auto && HoldUntil > DateTime.Now) return S.Manual($"{HoldUntil:HH:mm}");
             if (Last == null) return Cfg.Auto ? S.WaitingFirst : S.AutoOff;
             if (Last.Error != null) return S.Skipped(Last.Error, $"{Last.When:HH:mm}");
             return S.Room(Last.Lux.Value, Last.Target.Value, $"{Last.When:HH:mm}");
@@ -95,7 +116,7 @@ namespace AmbientLightCalibrate
             while (true)
             {
                 var started = DateTime.Now;
-                if (Cfg.Auto && DateTime.Now >= HoldUntil)
+                if (Cfg.Auto)
                 {
                     Dispatcher.Invoke(() => { Busy = true; Changed?.Invoke(); });
                     var r = Engine.AdjustOnce(Config.Load());
@@ -111,7 +132,7 @@ namespace AmbientLightCalibrate
         {
             if (_tray == null) return;
             var old = _tray.Icon;
-            _tray.Icon = SunIcon(Cfg.Auto && DateTime.Now >= HoldUntil);
+            _tray.Icon = SunIcon(Cfg.Auto);
             old?.Dispose();
             var t = $"{S.AppTitle} · {StatusText()}";
             _tray.Text = t.Length > 127 ? t[..127] : t;

@@ -56,7 +56,6 @@ namespace AmbientLightCalibrate
 
         public static string WaitingFirst => T("Waiting for the first reading…", "Чекаю на перший замір…");
         public static string AutoOff => T("Automation is off", "Автоматика вимкнена");
-        public static string Manual(string until) => T($"Manual · automation resumes at {until}", $"Вручну · автоматика з {until}");
         public static string Skipped(string why, string at) => T($"Skipped: {why} · {at}", $"Пропуск: {why} · {at}");
         public static string Room(double lux, double nits, string at) => T($"Room {lux:F0} lx → {nits:F0} nits · {at}", $"Кімната {lux:F0} лк → {nits:F0} ніт · {at}");
         public static string BusyWith(string what) => T($"{what} is running", $"працює {what}");

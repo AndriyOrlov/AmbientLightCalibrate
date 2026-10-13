@@ -34,7 +34,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
   brightness is mapped to measured luminance (nits), so two different monitors land on the *same* nits.
 * **Keeps your calibration.** Only the backlight (DDC/CI VCP 0x10) is changed — never RGB gains, never the video LUT.
   White point and gamma of a calibrated LCD stay put.
-* **Quick and calm.** A light switched on or off is followed within one reading, with a one-second fade; a dead zone keeps it from twitching, and a one-hour pause after you touch a slider.
+* **Quick and calm.** A light switched on or off is followed within one reading, with a one-second fade; a dead zone keeps it from twitching. The sliders move live while it adjusts.
 * **Safe.** Leaves a monitor alone while it is in **HDR** (HDR wants full backlight), and pauses while DisplayCAL,
   ArgyllCMS, HDRDisplayCalibrate, Calibrite/i1Profiler or similar tools are using the sensor.
 
@@ -87,7 +87,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 * **Offset** – shifts the whole curve. Use it if the defaults feel dim, or when the sensor sits where it sees less light
   than the screen does (e.g. behind the monitor).
 * A **big jump is confirmed by a second reading right away**: a lamp switched on reacts within one cycle, while someone walking past the sensor changes nothing. A **dead zone** (default 6 %) ignores small drifts, and the new brightness is **faded in over about a second**. An optional **max step** (default 0 = no limit) caps each change.
-* **Manual override** – moving any slider pauses automation for an hour.
+* **Manual override** – moving a brightness slider or pressing a preset switches automation off (turn it back on with the switch or *Measure*). The curve offset slider keeps automation on and applies at once.
 
 ## Build from source
 

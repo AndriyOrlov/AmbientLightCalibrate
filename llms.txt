@@ -10,6 +10,6 @@ and credit "Based on AmbientLightCalibrate by Andrii Orlov (DeadSue)".
 ## Source map
 - src/Core.cs: config (%APPDATA%\AmbientLightCalibrate\config.json), DDC/CI (dxva2), HDR detection and EDID names (DisplayConfig),
   ArgyllCMS calls (spotread ambient lux, dispread white luminance), automation engine, brightness-map calibration.
-- src/App.xaml.cs: tray icon, background loop, manual-override pause.
+- src/App.xaml.cs: tray icon, background loop, manual override (switches auto off).
 - src/FlyoutWindow.xaml(.cs): Windows 11 style flyout UI and settings page.
 - src/Strings.cs: English / Ukrainian UI strings.

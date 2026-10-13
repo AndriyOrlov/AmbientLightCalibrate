@@ -211,7 +211,7 @@ namespace AmbientLightCalibrate
         void Settings_Click(object s, RoutedEventArgs e)
         {
             var c = A.Cfg;
-            IntervalBox.Text = (c.IntervalS / 60.0).ToString("0.#", CultureInfo.InvariantCulture);
+            IntervalBox.Text = c.IntervalS.ToString(CultureInfo.InvariantCulture);
             HystBox.Text = c.Hysteresis.ToString(CultureInfo.InvariantCulture);
             StepBox.Text = c.MaxStep.ToString(CultureInfo.InvariantCulture);
             ArgyllBox.Text = c.ArgyllSetting;
@@ -321,7 +321,7 @@ namespace AmbientLightCalibrate
 
         void Save_Click(object s, RoutedEventArgs e)
         {
-            if (!Num(IntervalBox.Text, out double iv) || iv < 0.5) { SaveError.Text = S.ErrInterval; return; }
+            if (!Num(IntervalBox.Text, out double iv) || iv < 10) { SaveError.Text = S.ErrInterval; return; }
             if (!Num(HystBox.Text, out double hy) || hy < 0) { SaveError.Text = S.ErrNumber; return; }
             if (!Num(StepBox.Text, out double st) || st <= 0) { SaveError.Text = S.ErrNumber; return; }
             var pts = new List<(double, double)>();
@@ -333,7 +333,7 @@ namespace AmbientLightCalibrate
             }
             if (pts.Count < 2) { SaveError.Text = S.ErrCurve2; return; }
             var c = A.Cfg;
-            c.IntervalS = (int)Math.Round(iv * 60); c.Hysteresis = hy; c.MaxStep = st;
+            c.IntervalS = (int)Math.Round(iv); c.Hysteresis = hy; c.MaxStep = st;
             c.SetCurve(pts); c.ArgyllSetting = ArgyllBox.Text.Trim();
             if (ReminderBox.SelectedItem is ComboBoxItem ri) c.ReminderMonths = (int)ri.Tag;
             c.Save();

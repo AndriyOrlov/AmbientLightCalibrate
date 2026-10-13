@@ -20,7 +20,7 @@ namespace AmbientLightCalibrate
         public static string Log => T("Log", "Журнал");
         public static string Exit => T("Exit", "Вийти");
         public static string Back => T("Back", "Назад");
-        public static string IntervalMin => T("Measure every, min", "Інтервал заміру, хв");
+        public static string IntervalMin => T("Measure every, s", "Інтервал заміру, с");
         public static string Hysteresis => T("Ignore changes smaller than, %", "Не чіпати, якщо різниця менша, %");
         public static string MaxStep => T("Largest step at once, nits", "Найбільший крок за раз, ніт");
         public static string CurveTitle => T("Curve: room light → screen brightness", "Крива: освітлення кімнати → яскравість");
@@ -74,7 +74,7 @@ namespace AmbientLightCalibrate
         public static string ProfileLine(string name, bool hdr, DateTime d, int days) => T($"{name} {(hdr ? "HDR" : "SDR")}: {d:dd.MM.yyyy} ({days} d)", $"{name} {(hdr ? "HDR" : "SDR")}: {d:dd.MM.yyyy} ({days} дн.)");
         public static string Balloon(int n) => T($"{n} colour profile(s) are due for recalibration.", $"Час перекалібрувати: {n} профіль(і).");
 
-        public static string ErrInterval => T("Interval ≥ 0.5 min", "Інтервал ≥ 0.5 хв");
+        public static string ErrInterval => T("Interval ≥ 10 s", "Інтервал ≥ 10 с");
         public static string ErrNumber => T("Enter a number", "Введіть число");
         public static string ErrCurve => T("Curve: positive numbers", "Крива: додатні числа");
         public static string ErrCurve2 => T("Curve: at least 2 points", "Крива: щонайменше 2 точки");

@@ -11,7 +11,7 @@
     <ApplicationIcon>AmbientLightCalibrate.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <NoWarn>WPF0001;CA1416</NoWarn>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>Andrii Orlov (DeadSue)</Authors>
     <Copyright>Copyright 2026 Andrii Orlov (DeadSue)</Copyright>
     <Product>AmbientLightCalibrate</Product>

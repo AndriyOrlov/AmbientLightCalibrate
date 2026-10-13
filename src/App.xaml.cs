@@ -100,7 +100,7 @@ namespace AmbientLightCalibrate
                     var r = Engine.AdjustOnce(Config.Load());
                     Dispatcher.Invoke(() => { Cfg = Config.Load(); Last = r; Busy = false; UpdateTray(); });
                 }
-                _wake.WaitOne(TimeSpan.FromSeconds(Math.Max(Cfg.IntervalS, 30)));
+                _wake.WaitOne(TimeSpan.FromSeconds(Math.Max(Cfg.IntervalS, 10)));
             }
         }
 

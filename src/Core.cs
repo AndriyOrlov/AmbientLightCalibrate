@@ -54,10 +54,10 @@ namespace AmbientLightCalibrate
         void Defaults()
         {
             void Def(string k, JsonNode v) { if (!_j.ContainsKey(k)) _j[k] = v; }
-            Def("interval_s", 300);
+            Def("interval_s", 30);
             Def("curve", JsonNode.Parse("[[2,100],[10,120],[50,140],[150,160],[400,185],[1000,220]]"));
             Def("hysteresis_pct", 6);
-            Def("max_step_nits", 40);
+            Def("max_step_nits", 15);
             Def("monitors", new JsonObject());
             Def("offset_nits", 0);
             Def("tray_auto", false);
@@ -72,7 +72,9 @@ namespace AmbientLightCalibrate
         public void Save() =>
             File.WriteAllText(PathCfg, _j.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
-        double D(string k) => _j[k].GetValue<double>();
+        // numbers may be parsed JSON or values set in code (int/double): read them all the same way
+        static double Num(JsonNode n) => double.Parse(n.ToJsonString(), CultureInfo.InvariantCulture);
+        double D(string k) => Num(_j[k]);
         public int IntervalS { get => (int)D("interval_s"); set => _j["interval_s"] = value; }
         public double Hysteresis { get => D("hysteresis_pct"); set => _j["hysteresis_pct"] = value; }
         public double MaxStep { get => D("max_step_nits"); set => _j["max_step_nits"] = value; }
@@ -91,7 +93,7 @@ namespace AmbientLightCalibrate
         public string ArgyllBin => _argyll ??= Argyll.Find(ArgyllSetting);
 
         public List<(double lux, double nits)> Curve =>
-            _j["curve"].AsArray().Select(p => (p[0].GetValue<double>(), p[1].GetValue<double>())).OrderBy(p => p.Item1).ToList();
+            _j["curve"].AsArray().Select(p => (Num(p[0]), Num(p[1]))).OrderBy(p => p.Item1).ToList();
         public void SetCurve(IEnumerable<(double lux, double nits)> pts)
         {
             var a = new JsonArray();
@@ -104,7 +106,7 @@ namespace AmbientLightCalibrate
         {
             var m = _j["monitors"]?[model];
             if (m?["map"] == null || (m["enabled"] != null && !m["enabled"].GetValue<bool>())) return null;
-            return m["map"].AsArray().Select(p => (p[0].GetValue<double>(), p[1].GetValue<double>())).OrderBy(p => p.Item1).ToList();
+            return m["map"].AsArray().Select(p => (Num(p[0]), Num(p[1]))).OrderBy(p => p.Item1).ToList();
         }
 
         public void SetMap(string model, List<(double s, double n)> map)
@@ -439,9 +441,11 @@ namespace AmbientLightCalibrate
     public static class Engine
     {
         // other colour tools that need the sensor exclusively
-        static readonly string[] Busy = { "dispcal", "dispread", "colprof", "spotread", "chartread", "Calibrator", "DisplayCAL", "calibrite PROFILER", "i1Profiler" };
+        static readonly string[] Busy = { "dispcal", "dispread", "colprof", "spotread", "chartread", "Calibrator", "HDRDisplayCalibrate", "DisplayCAL", "calibrite PROFILER", "i1Profiler" };
 
         public static string BusyWith() => string.Join(", ", Busy.Where(n => Process.GetProcessesByName(n).Length > 0));
+
+        static readonly Queue<double> Recent = new();
 
         public static Result AdjustOnce(Config cfg)
         {
@@ -451,7 +455,11 @@ namespace AmbientLightCalibrate
             if (busy.Length > 0) { r.Error = S.BusyWith(busy); Log.Write("skip: " + busy + " running"); return r; }
             try { r.Lux = Argyll.AmbientLux(cfg); } catch (Exception e) { r.Error = S.MeasureFailed; Log.Write("ambient failed: " + e.Message); }
             if (r.Lux == null) { r.Error ??= S.NoSensor; Log.Write("ambient: no reading"); return r; }
-            r.Target = cfg.TargetNits(r.Lux.Value);
+            // median of the last three readings: someone walking past the sensor doesn't change anything
+            Recent.Enqueue(r.Lux.Value); while (Recent.Count > 3) Recent.Dequeue();
+            var sorted = Recent.OrderBy(x => x).ToList();
+            double lux = sorted[sorted.Count / 2];
+            r.Target = cfg.TargetNits(lux);
             var mons = Ddc.Enumerate();
             try
             {

@@ -1,20 +1,35 @@
-<p align="center"><img src="docs/icon.png" width="96" alt="AmbientLightCalibrate icon"></p>
+<p align="center">
+  <img src="docs/social-preview.png" alt="AmbientLightCalibrate: monitor brightness from real room light">
+</p>
 
-<h1 align="center">AmbientLightCalibrate</h1>
+<h3 align="center">Automatic monitor brightness from real room light, measured with a colorimeter</h3>
 
 <p align="center">
-<b>Automatic monitor brightness from real room light, measured with a colorimeter.</b><br>
-A tiny Windows 11 tray app: your i1Display / ColorMunki sits next to the screen, measures the room in lux
-every 30 seconds, and AmbientLightCalibrate sets every monitor to the right brightness in <b>nits</b> over DDC/CI.
+A tiny Windows 11 tray app: your i1Display / ColorMunki sits next to the screen, measures the room in lux every
+30 seconds, and AmbientLightCalibrate sets every monitor to the right brightness in <b>nits</b> over DDC/CI.
 </p>
 
 <p align="center">
-<a href="https://send.monobank.ua/jar/7AVDtzYypi"><img alt="Sponsor" src="https://img.shields.io/badge/sponsor-%E2%9D%A4%20Monobank-ea4aaa?logo=githubsponsors&logoColor=white"></a>
-<a href="https://github.com/AndriyOrlov/AmbientLightCalibrate/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/AndriyOrlov/AmbientLightCalibrate?label=download"></a>
-<a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-<img alt="Windows 10/11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4">
-<img alt=".NET 10 WPF Fluent" src="https://img.shields.io/badge/.NET%2010-WPF%20Fluent-512BD4">
+  <a href="https://github.com/AndriyOrlov/AmbientLightCalibrate/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows%2010%20%7C%2011-0078D4?style=for-the-badge&logo=windows11&logoColor=white"></a>
+  <a href="https://send.monobank.ua/jar/7AVDtzYypi"><img alt="Support the project" src="https://img.shields.io/badge/Support-%E2%9D%A4%20Monobank-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white"></a>
 </p>
+
+<p align="center">
+  <a href="https://github.com/AndriyOrlov/AmbientLightCalibrate/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/AndriyOrlov/AmbientLightCalibrate?label=release"></a>
+  <a href="https://github.com/AndriyOrlov/AmbientLightCalibrate/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/AndriyOrlov/AmbientLightCalibrate/total?label=downloads"></a>
+  <a href="https://github.com/AndriyOrlov/AmbientLightCalibrate/actions/workflows/build.yml"><img alt="Build" src="https://github.com/AndriyOrlov/AmbientLightCalibrate/actions/workflows/build.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+  <img alt=".NET 10 WPF Fluent" src="https://img.shields.io/badge/.NET%2010-WPF%20Fluent-512BD4">
+</p>
+
+<h4 align="center">
+  <a href="#-why">Why</a> ·
+  <a href="#-features">Features</a> ·
+  <a href="#-install">Install</a> ·
+  <a href="#%EF%B8%8F-how-it-works">How it works</a> ·
+  <a href="#%EF%B8%8F-support">Support</a> ·
+  <a href="#-українською">Українською</a>
+</h4>
 
 <p align="center">
 <img src="docs/flyout.png" width="380" alt="AmbientLightCalibrate flyout: auto brightness switch, per-monitor sliders in nits, presets, curve offset">
@@ -25,7 +40,7 @@ every 30 seconds, and AmbientLightCalibrate sets every monitor to the right brig
 
 ---
 
-## Why
+## 🤔 Why
 
 Phones and laptops dim and brighten with the room; desktop monitors don't. Calibration tools such as
 Calibrite PROFILER can *measure* ambient light and *suggest* a brightness, but they don't keep adjusting it.
@@ -39,7 +54,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 * **Safe.** Leaves a monitor alone while it is in **HDR** (HDR wants full backlight), and pauses while DisplayCAL,
   ArgyllCMS, HDRDisplayCalibrate, Calibrite/i1Profiler or similar tools are using the sensor.
 
-## Features
+## ✨ Features
 
 | | |
 |---|---|
@@ -52,7 +67,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 | Start with Windows | One switch (per-user `Run` key, no admin) |
 | Log | Every reading and change, in `%APPDATA%\AmbientLightCalibrate\log.txt` |
 
-## Requirements
+## 📋 Requirements
 
 * Windows 10 or 11, monitors with **DDC/CI** enabled in their on-screen menu.
 * A colorimeter with an **ambient-light diffuser** supported by [ArgyllCMS](https://www.argyllcms.com/):
@@ -60,7 +75,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 * **ArgyllCMS** installed (or DisplayCAL, which bundles it). AmbientLightCalibrate finds it in the usual places; otherwise set the
   folder in *Settings*.
 
-## Install
+## 📦 Install
 
 1. Download `AmbientLightCalibrate.exe` from [Releases](https://github.com/AndriyOrlov/AmbientLightCalibrate/releases/latest) — one self-contained file,
    no .NET install needed. Put it anywhere and run it; a sun icon appears in the tray.
@@ -71,7 +86,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
    (a small tripod mount behind the monitor works; see *Offset* below).
 4. Switch **Auto brightness** on. Done.
 
-## How it works
+## ⚙️ How it works
 
 ```
  colorimeter (diffuser closed)                     every N seconds (default 30)
@@ -90,7 +105,7 @@ AmbientLightCalibrate does — with real numbers instead of guesses:
 * A **big jump is confirmed by a second reading right away**: a lamp switched on reacts within one cycle, while someone walking past the sensor changes nothing. A **dead zone** (default 6 %) ignores small drifts, and the new brightness is **faded in over about a second**. An optional **max step** (default 0 = no limit) caps each change.
 * **Manual override** – moving a brightness slider or pressing a preset switches automation off (turn it back on with the switch or *Measure*). The curve offset slider keeps automation on and applies at once.
 
-## Build from source
+## 🛠 Build from source
 
 ```bash
 git clone https://github.com/AndriyOrlov/AmbientLightCalibrate
@@ -100,7 +115,7 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 Requires the .NET 10 SDK. Every tag `v*` is built by GitHub Actions and attached to a release.
 
-## Credits and attribution
+## 🙏 Credits and attribution
 
 **AmbientLightCalibrate** is created by **Andrii Orlov (DeadSue)** — [github.com/AndriyOrlov](https://github.com/AndriyOrlov) · [deadsue.art](https://deadsue.art).
 
@@ -112,28 +127,34 @@ A [CITATION.cff](CITATION.cff) is included for academic and tooling use.
 Room light and screen luminance are measured with [ArgyllCMS](https://www.argyllcms.com/) by Graeme W. Gill (AGPL-3.0),
 which AmbientLightCalibrate calls as external tools; it is not bundled in this repository.
 
-## Use by AI and LLMs
+## 🤖 Use by AI and LLMs
 
 This repository may be read, indexed, used to train or fine-tune AI models, and used as context for AI-generated code.
 Code produced from it is a derivative work under Apache-2.0, so the same attribution applies:
 **keep the copyright notice and credit "Andrii Orlov (DeadSue)"**. A short machine-readable summary is in [llms.txt](llms.txt).
 
-## Support
+## ❤️ Support
 
 If AmbientLightCalibrate is useful to you, you can support its development:
 
-* **Monobank jar:** https://send.monobank.ua/jar/7AVDtzYypi
-* **Jar card number:** `4874 1000 3425 0244`
+<table>
+  <tr>
+    <td><a href="https://send.monobank.ua/jar/7AVDtzYypi"><img src="docs/donate-qr.svg" width="160" alt="QR code: Monobank jar"></a></td>
+    <td>
+      <b>Monobank jar:</b> <a href="https://send.monobank.ua/jar/7AVDtzYypi">send.monobank.ua/jar/7AVDtzYypi</a><br>
+      <b>Jar card number:</b> <code>4874 1000 3425 0244</code><br><br>
+      A ⭐ on GitHub and a mention in your videos or posts help just as much. Thank you!
+    </td>
+  </tr>
+</table>
 
-Thank you!
-
-## License
+## 📄 License
 
 Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Copyright 2026 Andrii Orlov (DeadSue).
 
 ---
 
-## Українською
+## 🇺🇦 Українською
 
 **AmbientLightCalibrate** — маленька програма в треї Windows, що сама підлаштовує яскравість моніторів під освітлення кімнати.
 Колориметр (i1Display / ColorMunki) із закритим розсіювачем раз на кілька хвилин міряє кімнату в люксах, а AmbientLightCalibrate через
